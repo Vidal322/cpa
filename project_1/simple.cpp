@@ -1,6 +1,7 @@
 //#include <omp.h>
 #include <stdio.h>
 #include <iostream>
+#include <fstream>
 #include <iomanip>
 #include <time.h>
 #include <cstdlib>
@@ -11,8 +12,24 @@ using namespace std;
 #define SYSTEMTIME clock_t
 
  
-void OnMult(int m_ar, int m_br) 
-{
+void write_to_file(const char* filename, double time, long long values[]) {
+    ofstream outfile;
+    outfile.open(filename, ios::app); // Append mode
+    if (!outfile) {
+        cerr << "Error opening file!" << endl;
+        return;
+    }
+
+    outfile << fixed << setprecision(3) << time << ",";
+    outfile << values[0] << ",";
+    outfile << values[1] << ",";
+    outfile << values[2] << ",";
+    outfile << values[3] << ",";
+    outfile << values[4];
+    outfile.close();
+}
+
+void OnMult(int m_ar, int m_br, const char* filename, int EventSet) {
 	
 	SYSTEMTIME Time1, Time2;
 	
@@ -21,6 +38,8 @@ void OnMult(int m_ar, int m_br)
 	int i, j, k;
 
 	double *pha, *phb, *phc;
+
+	long long values[5];
 	
 
 		
@@ -39,6 +58,9 @@ void OnMult(int m_ar, int m_br)
 			phb[i*m_br + j] = (double)(i+1);
 
 
+
+	int ret = PAPI_start(EventSet);
+	if (ret != PAPI_OK) cout << "ERRO: Start PAPI" << endl;
 
     Time1 = clock();
 
@@ -55,16 +77,22 @@ void OnMult(int m_ar, int m_br)
 
 
     Time2 = clock();
-	sprintf(st, "Time: %3.3f seconds\n", (double)(Time2 - Time1) / CLOCKS_PER_SEC);
-	cout << st;
 
-	cout << "Result matrix: " << endl;
-	for(i=0; i<1; i++) {	
-		for(j=0; j<min(10,m_br); j++)
-			cout << phc[j] << " ";
+	ret = PAPI_stop(EventSet, values);
+	if (ret != PAPI_OK) cout << "ERRO: Stop PAPI" << endl;
+
+	write_to_file(filename, (double)(Time2 - Time1) / CLOCKS_PER_SEC, values);
+
+	// sprintf(st, "Time: %3.3f seconds\n", (double)(Time2 - Time1) / CLOCKS_PER_SEC);
+	// cout << st;
+
+	// cout << "Result matrix: " << endl;
+	// for(i=0; i<1; i++) {	
+	// 	for(j=0; j<min(10,m_br); j++)
+	// 		cout << phc[j] << " ";
 	
-	cout << endl;
-	}
+	// cout << endl;
+	// }
 	
 
 
@@ -76,9 +104,8 @@ void OnMult(int m_ar, int m_br)
 }
 
 
-void OnMultLine(int m_ar, int m_br)
+void OnMultLine(int m_ar, int m_br, const char* filename, int EventSet)
 {
-    cout << endl;
 
 	SYSTEMTIME Time1, Time2;
 	
@@ -88,6 +115,7 @@ void OnMultLine(int m_ar, int m_br)
 
 	double *pha, *phb, *phc;
 	
+	long long values[5];
 
 		
     pha = (double *)malloc((m_ar * m_ar) * sizeof(double));
@@ -106,6 +134,9 @@ void OnMultLine(int m_ar, int m_br)
 			phb[i*m_br + j] = (double)(i+1);
 
 
+	int ret = PAPI_start(EventSet);
+	if (ret != PAPI_OK) cout << "ERRO: Start PAPI" << endl;
+
     Time1 = clock();
 
 	for(i=0; i<m_ar; i++)
@@ -119,17 +150,22 @@ void OnMultLine(int m_ar, int m_br)
 	}
 
     Time2 = clock();
-	sprintf(st, "Time: %3.3f seconds\n", (double)(Time2 - Time1) / CLOCKS_PER_SEC);
-	cout << st;
+	ret = PAPI_stop(EventSet, values);
+	if (ret != PAPI_OK) cout << "ERRO: Stop PAPI" << endl;
+
+	write_to_file(filename, (double)(Time2 - Time1) / CLOCKS_PER_SEC, values);
+
+	// sprintf(st, "Time: %3.3f seconds\n", (double)(Time2 - Time1) / CLOCKS_PER_SEC);
+	// cout << st;
 
 
-	cout << "Result matrix: " << endl;
-	for (int i = 0; i < 1; i++) {
-		for (int j = 0; j < min(10,m_ar); j++) {
-			cout << phc[j] << " ";
-		}
-		cout << endl;
-	}
+	// cout << "Result matrix: " << endl;
+	// for (int i = 0; i < 1; i++) {
+	// 	for (int j = 0; j < min(10,m_ar); j++) {
+	// 		cout << phc[j] << " ";
+	// 	}
+	// 	cout << endl;
+	// }
 
     free(pha);
     free(phb);
@@ -137,9 +173,8 @@ void OnMultLine(int m_ar, int m_br)
 
 }
 
-void OnMultBlock(int m_ar, int m_br, int bk_size)
+void OnMultBlock(int m_ar, int m_br, int bk_size, const char* filename, int EventSet)
 {
-	cout << endl;
 
 	SYSTEMTIME Time1, Time2;
 	
@@ -148,6 +183,10 @@ void OnMultBlock(int m_ar, int m_br, int bk_size)
 	int i, j, k;
 
 	double *pha, *phb, *phc;
+
+	long long values[5];
+
+		
 	
 
 		
@@ -168,6 +207,8 @@ void OnMultBlock(int m_ar, int m_br, int bk_size)
 			phc[i*m_ar + j] = (double) 0.0;
 
 
+	int ret = PAPI_start(EventSet);
+	if (ret != PAPI_OK) cout << "ERRO: Start PAPI" << endl;
 	Time1 = clock();
 
 	for(i=0; i<m_ar; i+=bk_size)
@@ -180,15 +221,19 @@ void OnMultBlock(int m_ar, int m_br, int bk_size)
 
 
 	Time2 = clock();
-	sprintf(st, "Time: %3.3f seconds\n", (double)(Time2 - Time1) / CLOCKS_PER_SEC);
-	cout << st;
+	ret = PAPI_stop(EventSet, values);
+	if (ret != PAPI_OK) cout << "ERRO: Stop PAPI" << endl;
 
-	cout << "Result matrix: " << endl;
-	for(i=0; i<1; i++) {	
-		for(j=0; j<min(10,m_br); j++)
-			cout << phc[j] << " ";
-	}
-	cout << endl;
+	write_to_file(filename, (double)(Time2 - Time1) / CLOCKS_PER_SEC, values);
+	// sprintf(st, "Time: %3.3f seconds\n", (double)(Time2 - Time1) / CLOCKS_PER_SEC);
+	// cout << st;
+
+	// cout << "Result matrix: " << endl;
+	// for(i=0; i<1; i++) {	
+	// 	for(j=0; j<min(10,m_br); j++)
+	// 		cout << phc[j] << " ";
+	// }
+	// cout << endl;
 
 	free(pha);
 	free(phb);
@@ -237,8 +282,10 @@ int main (int argc, char *argv[])
 	int op;
 	
 	int EventSet = PAPI_NULL;
-  	long long values[2];
+  	long long values[5];
   	int ret;
+
+	char filename[40] = "simple.csv";
 	
 
 	ret = PAPI_library_init( PAPI_VER_CURRENT );
@@ -269,65 +316,117 @@ int main (int argc, char *argv[])
 	if (ret != PAPI_OK) cout << "ERRO: PAPI_TLB_DM: " << ret <<endl;
 
 
-	op=1;
-	do {
-		cout << endl << "1. Multiplication" << endl;
-		cout << "2. Line Multiplication" << endl;
-		cout << "3. Block Multiplication" << endl;
-		cout << "Selection?: ";
-		cin >> op;
-		if (op == 0)
-			break;
-		printf("Dimensions: lins cols ? ");
-   		cin >> lin >> col;
+	ofstream outfile;
+    outfile.open(filename);	
+    if (!outfile) {
+        cerr << "Error opening file!" << endl;
+        return -1;
+    }
+	outfile << "Time,L1 DCM,L2 DCM,FP OPS,TOT INS,TLB DM" << endl;
+	outfile.close();
 
 
+	for (int i = 600; i <= 3000; i += 400) {
+		for (int j = 0; j < 5; j++) {
+			OnMult(i, i, filename, EventSet);
 
-		// Start counting
-		ret = PAPI_start(EventSet);
-		if (ret != PAPI_OK) cout << "ERRO: Start PAPI" << endl;
-
-		switch (op){
-			case 1: 
-				OnMult(lin, col);
-				break;
-			case 2:
-				OnMultLine(lin, col);
-				break;
-			case 3:
-				int bs;
-				cout << "Block Size? ";
-				cin >> bs;
-				OnMultBlock(lin, col, bs);
-				break;
+			outfile.open(filename, ios::app); // Append mode
+			if (!outfile) {
+				cerr << "Error opening file!" << endl;
+				return -1;
+			}
+			outfile << "\n";
+			outfile.close();
 		}
+	}
 
-  		ret = PAPI_stop(EventSet, values);
-  		if (ret != PAPI_OK) cout << "ERRO: Stop PAPI" << endl;
-  		printf("L1 DCM: %lld \n",values[0]);
-  		printf("L2 DCM: %lld \n",values[1]);
-		printf("FP_OPS: %lld \n",values[2]);
-		printf("TOT_INS: %lld \n",values[3]);
-		printf("TLB_DM: %lld \n",values[4]);
+	for (int i = 600; i <= 3000; i += 400) {
+		for (int j = 0; j < 5; j++) {
+			OnMultLine(i, i, filename, EventSet);
 
-		ret = PAPI_reset( EventSet );
-		if ( ret != PAPI_OK )
-			std::cout << "FAIL reset" << endl; 
+			outfile.open(filename, ios::app); // Append mode
+			if (!outfile) {
+				cerr << "Error opening file!" << endl;
+				return -1;
+			}
+			outfile << "\n";
+			outfile.close();
+		}
+	}
+
+	// op=1;
+	// do {
+	// 	cout << endl << "1. Multiplication" << endl;
+	// 	cout << "2. Line Multiplication" << endl;
+	// 	cout << "3. Block Multiplication" << endl;
+	// 	cout << "Selection?: ";
+	// 	cin >> op;
+	// 	if (op == 0)
+	// 		break;
+	// 	printf("Dimensions: lins cols ? ");
+   	// 	cin >> lin >> col;
 
 
 
-	}while (op != 0);
+	// 	// Start counting
+	// 	ret = PAPI_start(EventSet);
+	// 	if (ret != PAPI_OK) cout << "ERRO: Start PAPI" << endl;
 
-		ret = PAPI_remove_event( EventSet, PAPI_L1_DCM );
-		if ( ret != PAPI_OK )
-			std::cout << "FAIL remove event" << endl; 
+	// 	switch (op){
+	// 		case 1: 
+	// 			OnMult(lin, col);
+	// 			break;
+	// 		case 2:
+	// 			OnMultLine(lin, col);
+	// 			break;
+	// 		case 3:
+	// 			int bs;
+	// 			cout << "Block Size? ";
+	// 			cin >> bs;
+	// 			OnMultBlock(lin, col, bs);
+	// 			break;
+	// 	}
 
-		ret = PAPI_remove_event( EventSet, PAPI_L2_DCM );
-		if ( ret != PAPI_OK )
-			std::cout << "FAIL remove event" << endl; 
+  	// 	// ret = PAPI_stop(EventSet, values);
+  	// 	// if (ret != PAPI_OK) cout << "ERRO: Stop PAPI" << endl;
+  	// 	// printf("L1 DCM: %lld \n",values[0]);
+  	// 	// printf("L2 DCM: %lld \n",values[1]);
+	// 	// printf("FP_OPS: %lld \n",values[2]);
+	// 	// printf("TOT_INS: %lld \n",values[3]);
+	// 	// printf("TLB_DM: %lld \n",values[4]);
 
-		ret = PAPI_destroy_eventset( &EventSet );
-		if ( ret != PAPI_OK )
-			std::cout << "FAIL destroy" << endl;
+	// 	ret = PAPI_reset( EventSet );
+	// 	if ( ret != PAPI_OK )
+	// 		std::cout << "FAIL reset" << endl; 
 
+
+
+	// }while (op != 0);
+
+	ret = PAPI_remove_event( EventSet, PAPI_L1_DCM );
+	if ( ret != PAPI_OK )
+		std::cout << "FAIL remove event" << endl; 
+
+	ret = PAPI_remove_event( EventSet, PAPI_L2_DCM );
+	if ( ret != PAPI_OK )
+		std::cout << "FAIL remove event" << endl; 
+	
+	ret = PAPI_remove_event( EventSet, PAPI_FP_OPS );
+	if ( ret != PAPI_OK )
+		std::cout << "FAIL remove event" << endl;
+	
+	ret = PAPI_remove_event( EventSet, PAPI_TOT_INS );
+	if ( ret != PAPI_OK )
+		std::cout << "FAIL remove event" << endl;
+	
+	ret = PAPI_remove_event( EventSet, PAPI_TLB_DM );
+	if ( ret != PAPI_OK )
+		std::cout << "FAIL remove event" << endl;
+
+
+	ret = PAPI_destroy_eventset( &EventSet );
+	if ( ret != PAPI_OK )
+		std::cout << "FAIL destroy" << endl;
+
+	return 0;
 }
