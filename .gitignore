@@ -1,1 +1,4 @@
 .vscode
+rust/target/
+*fileout
+rust/Cargo.lock
