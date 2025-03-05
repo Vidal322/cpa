@@ -1,18 +1,19 @@
-//#include <omp.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <iostream>
 #include <fstream>
 #include <iomanip>
 #include <time.h>
 #include <cstdlib>
 #include <papi.h>
+#include <eml.h>
 
 using namespace std;
 
 #define SYSTEMTIME clock_t
 
  
-void write_to_file(const char* filename, double time, long long values[], int  size) {
+void write_to_file(const char* filename, double time, long long values[], int  size, float energy) {
     ofstream outfile;
     outfile.open(filename, ios::app); // Append mode
     if (!outfile) {
@@ -25,11 +26,19 @@ void write_to_file(const char* filename, double time, long long values[], int  s
     outfile << values[1] << ",";
     outfile << values[2] << ",";
     outfile << values[3] << ",";
-    outfile << values[4];
+    outfile << values[4] << ",";
+	outfile << fixed << setprecision(3)<< energy << std::endl;
     outfile.close();
 }
 
 void OnMult(int m_ar, int m_br, const char* filename, int EventSet) {
+	
+
+	emlInit();
+	//allocate space for results
+	size_t count = 1;
+	emlDeviceGetCount(&count);
+	emlData_t *data[count];
 	
 	SYSTEMTIME Time1, Time2;
 	
@@ -62,6 +71,7 @@ void OnMult(int m_ar, int m_br, const char* filename, int EventSet) {
 	int ret = PAPI_start(EventSet);
 	if (ret != PAPI_OK) cout << "ERRO: Start PAPI" << endl;
 
+	emlStart();
     Time1 = clock();
 
 	for(i=0; i<m_ar; i++)
@@ -77,13 +87,17 @@ void OnMult(int m_ar, int m_br, const char* filename, int EventSet) {
 
 
     Time2 = clock();
+	emlStop(data);
 
 	ret = PAPI_stop(EventSet, values);
 	if (ret != PAPI_OK) cout << "ERRO: Stop PAPI" << endl;
 
-	write_to_file(filename, (double)(Time2 - Time1) / CLOCKS_PER_SEC, values, m_ar);
+	double consumed;
+	emlDataGetConsumed(data[0], &consumed);
+	emlDataFree(data[0]);
+	printf("This device consumed %g J \n", consumed);
 
-
+	write_to_file(filename, (double)(Time2 - Time1) / CLOCKS_PER_SEC, values, m_ar, consumed);
 	
 
 
@@ -97,6 +111,13 @@ void OnMult(int m_ar, int m_br, const char* filename, int EventSet) {
 
 void OnMultLine(int m_ar, int m_br, const char* filename, int EventSet)
 {
+
+	emlInit();
+	//allocate space for results
+	size_t count = 1;
+	emlDeviceGetCount(&count);
+	emlData_t *data[count];
+
 
 	SYSTEMTIME Time1, Time2;
 	
@@ -128,6 +149,7 @@ void OnMultLine(int m_ar, int m_br, const char* filename, int EventSet)
 	int ret = PAPI_start(EventSet);
 	if (ret != PAPI_OK) cout << "ERRO: Start PAPI" << endl;
 
+	emlStart();
     Time1 = clock();
 
 	for(i=0; i<m_ar; i++)
@@ -141,10 +163,17 @@ void OnMultLine(int m_ar, int m_br, const char* filename, int EventSet)
 	}
 
     Time2 = clock();
+	emlStop(data);
+
 	ret = PAPI_stop(EventSet, values);
 	if (ret != PAPI_OK) cout << "ERRO: Stop PAPI" << endl;
 
-	write_to_file(filename, (double)(Time2 - Time1) / CLOCKS_PER_SEC, values, m_ar);
+	double consumed;
+	emlDataGetConsumed(data[0], &consumed);
+	emlDataFree(data[0]);
+	printf("This device consumed %g J \n", consumed);
+
+	write_to_file(filename, (double)(Time2 - Time1) / CLOCKS_PER_SEC, values, m_ar, consumed);
 
 
     free(pha);
@@ -221,39 +250,34 @@ int main (int argc, char *argv[])
         cerr << "Error opening file!" << endl;
         return -1;
     }
-	outfile << "Size,Time,L1_DCM,L2_DCM,FP_OPS,TOT_INS,TLB_DM" << endl;
+	outfile << "Size,Time,L1_DCM,L2_DCM,FP_OPS,TOT_INS,TLB_DM,Energy(J)" << endl;
 	outfile.close();
 
 
 	//  Multiplication
 
-	for (int i = 600; i <= 3000; i += 400) {
 		for (int j = 0; j < 5; j++) {
-			OnMult(i, i, filename, EventSet);
-
-			outfile.open(filename, ios::app);
-			if (!outfile) {
-				cerr << "Error opening file!" << endl;
-				return -1;
-			}
-			outfile << "\n";
-			outfile.close();
+			OnMult(1000, 1000, filename, EventSet);
 		}
-	}
 
-	for (int i = 4096; i <= 10240; i += 2048) {
 		for (int j = 0; j < 5; j++) {
-			OnMultLine(i, i, filename, EventSet);
-
-			outfile.open(filename, ios::app);
-			if (!outfile) {
-				cerr << "Error opening file!" << endl;
-				return -1;
-			}
-			outfile << "\n";
-			outfile.close();
+			OnMult(1400, 1400, filename, EventSet);
 		}
-	}
+		for (int j = 0; j < 5; j++) {
+			OnMult(2000, 2000, filename, EventSet);
+		}
+
+
+		for (int j = 0; j < 5; j++) {
+			OnMultLine(1000, 1000, filename, EventSet);
+		}
+
+		for (int j = 0; j < 5; j++) {
+			OnMultLine(1400, 1400, filename, EventSet);
+		}
+		for (int j = 0; j < 5; j++) {
+			OnMultLine(2000, 2000, filename, EventSet);
+		}
 
 
 
