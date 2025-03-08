@@ -111,7 +111,7 @@ void OnMult(int m_ar, int m_br, const char* filename, int EventSet) {
 
 
 
-void OnMultLine1(int m_ar, int m_br, const char* filename) {
+void OnMultLine1(int m_ar, int m_br, const char* filename, int eventSet) {
     emlInit();
     
     size_t count = 1;
@@ -120,6 +120,7 @@ void OnMultLine1(int m_ar, int m_br, const char* filename) {
     
     double Time1, Time2;
     double *pha, *phb, *phc;
+    long long values[5];
     
     pha = (double *)malloc((m_ar * m_ar) * sizeof(double));
     phb = (double *)malloc((m_br * m_br) * sizeof(double));
@@ -158,7 +159,6 @@ void OnMultLine1(int m_ar, int m_br, const char* filename) {
     
     printf("This device consumed %g J \n", consumed);
     
-    long long values[5] = {0}; 
     write_to_file(filename, Time2 - Time1, values, m_ar, consumed);
     
     free(pha);
@@ -167,7 +167,7 @@ void OnMultLine1(int m_ar, int m_br, const char* filename) {
 }
 
 
-void OnMultLine2(int m_ar, int m_br, const char* filename) {
+void OnMultLine2(int m_ar, int m_br, const char* filename, int eventSet) {
     emlInit();
     
     // Allocate space for power measurement
@@ -177,6 +177,8 @@ void OnMultLine2(int m_ar, int m_br, const char* filename) {
     
     double Time1, Time2;
     double *pha, *phb, *phc;
+
+    long long values[5];
     
     pha = (double *)malloc((m_ar * m_ar) * sizeof(double));
     phb = (double *)malloc((m_br * m_br) * sizeof(double));
@@ -216,7 +218,6 @@ void OnMultLine2(int m_ar, int m_br, const char* filename) {
     
     printf("This device consumed %g J \n", consumed);
     
-    long long values[5] = {0}; 
     write_to_file(filename, Time2 - Time1, values, m_ar, consumed);
     
     free(pha);
