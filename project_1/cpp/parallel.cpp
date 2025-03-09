@@ -116,14 +116,14 @@ void OnMultLine1(int m_ar, int m_br, const char* filename, int eventSet) {
     emlDeviceGetCount(&count);
     emlData_t* data[count];
     
-	SYSTEMTIME Time1, Time2;
+	double Time1, Time2;
 
 	int i, j, k;
 
     double *pha, *phb, *phc;
-    
+
     long long values[5];
-    
+
 
     pha = (double *)malloc((m_ar * m_ar) * sizeof(double));
     phb = (double *)malloc((m_br * m_br) * sizeof(double));
@@ -146,7 +146,7 @@ void OnMultLine1(int m_ar, int m_br, const char* filename, int eventSet) {
 	if (ret != PAPI_OK) cout << "ERRO: Start PAPI" << endl;
 
     emlStart();
-    Time1 = clock();
+    Time1 = omp_get_wtime();
 
     #pragma omp parallel for
     for (i = 0; i < m_ar; i++) {
@@ -157,7 +157,7 @@ void OnMultLine1(int m_ar, int m_br, const char* filename, int eventSet) {
         }
     }
 
-    Time2 = clock();
+    Time2 = omp_get_wtime();
     emlStop(data);
     
 	ret = PAPI_stop(eventSet, values);
@@ -168,7 +168,7 @@ void OnMultLine1(int m_ar, int m_br, const char* filename, int eventSet) {
     emlDataFree(data[0]);
     printf("This device consumed %g J \n", consumed);
     
-    write_to_file(filename, Time2 - Time1, values, m_ar, consumed);
+    write_to_file(filename, (double)(Time2 - Time1), values, m_ar, consumed);
     
     free(pha);
     free(phb);
@@ -183,14 +183,14 @@ void OnMultLine2(int m_ar, int m_br, const char* filename, int eventSet) {
     emlDeviceGetCount(&count);
     emlData_t* data[count];
     
-	SYSTEMTIME Time1, Time2;
+	double Time1, Time2;
 
 	int i, j, k;
 
     double *pha, *phb, *phc;
-    
-	long long values[5];
 
+    long long values[5];
+    
 
     pha = (double *)malloc((m_ar * m_ar) * sizeof(double));
     phb = (double *)malloc((m_br * m_br) * sizeof(double));
@@ -213,7 +213,7 @@ void OnMultLine2(int m_ar, int m_br, const char* filename, int eventSet) {
 	if (ret != PAPI_OK) cout << "ERRO: Start PAPI" << endl;
 
     emlStart();
-    Time1 = clock();
+    Time1 = omp_get_wtime();
 
     #pragma omp parallel private(i, k)
     for (i = 0; i < m_ar; i++) {
@@ -225,7 +225,7 @@ void OnMultLine2(int m_ar, int m_br, const char* filename, int eventSet) {
         }
     }
 
-    Time2 = clock();
+    Time2 = omp_get_wtime();
     emlStop(data);
     
 	ret = PAPI_stop(eventSet, values);
@@ -236,7 +236,7 @@ void OnMultLine2(int m_ar, int m_br, const char* filename, int eventSet) {
     emlDataFree(data[0]);
     printf("This device consumed %g J \n", consumed);
     
-    write_to_file(filename, Time2 - Time1, values, m_ar, consumed);
+    write_to_file(filename, (double)(Time2 - Time1), values, m_ar, consumed);
     
     free(pha);
     free(phb);
