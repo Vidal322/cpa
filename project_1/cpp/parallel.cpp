@@ -33,8 +33,6 @@ void write_to_file(const char* filename, double time, long long values[], int  s
 }
 
 void OnMult(int m_ar, int m_br, const char* filename, int EventSet) {
-	
-
 	emlInit();
 	//allocate space for results
 	size_t count = 1;
@@ -118,45 +116,57 @@ void OnMultLine1(int m_ar, int m_br, const char* filename, int eventSet) {
     emlDeviceGetCount(&count);
     emlData_t* data[count];
     
-    double Time1, Time2;
+	SYSTEMTIME Time1, Time2;
+
+	int i, j, k;
+
     double *pha, *phb, *phc;
     long long values[5];
     
+	long long values[5];
+
+
     pha = (double *)malloc((m_ar * m_ar) * sizeof(double));
     phb = (double *)malloc((m_br * m_br) * sizeof(double));
     phc = (double *)malloc((m_ar * m_br) * sizeof(double));
 
-    for (int i = 0; i < m_ar; i++)
-        for (int j = 0; j < m_ar; j++)
+    for (i = 0; i < m_ar; i++)
+        for (j = 0; j < m_ar; j++)
             pha[i * m_ar + j] = 1.0;
 
-    for (int i = 0; i < m_br; i++)
-        for (int j = 0; j < m_br; j++)
+    for (i = 0; i < m_br; i++)
+        for (j = 0; j < m_br; j++)
             phb[i * m_br + j] = (double)(i + 1);
 
-    for (int i = 0; i < m_ar; i++)
-        for (int j = 0; j < m_br; j++)
+    for (i = 0; i < m_ar; i++)
+        for (j = 0; j < m_br; j++)
             phc[i * m_br + j] = 0.0;
 
+
+	int ret = PAPI_start(EventSet);
+	if (ret != PAPI_OK) cout << "ERRO: Start PAPI" << endl;
+
     emlStart();
-    Time1 = omp_get_wtime();
+    Time1 = clock();
 
     #pragma omp parallel for
-    for (int i = 0; i < m_ar; i++) {
-        for (int k = 0; k < m_br; k++) {
-            for (int j = 0; j < m_ar; j++) {
+    for (i = 0; i < m_ar; i++) {
+        for (k = 0; k < m_br; k++) {
+            for (j = 0; j < m_ar; j++) {
                 phc[i * m_br + j] += pha[i * m_ar + k] * phb[k * m_br + j];
             }
         }
     }
 
-    Time2 = omp_get_wtime();
+    Time2 = clock();
     emlStop(data);
     
+	ret = PAPI_stop(EventSet, values);
+	if (ret != PAPI_OK) cout << "ERRO: Stop PAPI" << endl;
+
     double consumed;
     emlDataGetConsumed(data[0], &consumed);
     emlDataFree(data[0]);
-    
     printf("This device consumed %g J \n", consumed);
     
     write_to_file(filename, Time2 - Time1, values, m_ar, consumed);
@@ -170,52 +180,63 @@ void OnMultLine1(int m_ar, int m_br, const char* filename, int eventSet) {
 void OnMultLine2(int m_ar, int m_br, const char* filename, int eventSet) {
     emlInit();
     
-    // Allocate space for power measurement
     size_t count = 1;
     emlDeviceGetCount(&count);
     emlData_t* data[count];
     
-    double Time1, Time2;
+	SYSTEMTIME Time1, Time2;
+
+	int i, j, k;
+
     double *pha, *phb, *phc;
 
     long long values[5];
     
+	long long values[5];
+
+
     pha = (double *)malloc((m_ar * m_ar) * sizeof(double));
     phb = (double *)malloc((m_br * m_br) * sizeof(double));
     phc = (double *)malloc((m_ar * m_br) * sizeof(double));
 
-    for (int i = 0; i < m_ar; i++)
-        for (int j = 0; j < m_ar; j++)
+
+    for (i = 0; i < m_ar; i++)
+        for (j = 0; j < m_ar; j++)
             pha[i * m_ar + j] = 1.0;
 
-    for (int i = 0; i < m_br; i++)
-        for (int j = 0; j < m_br; j++)
+    for (i = 0; i < m_br; i++)
+        for (j = 0; j < m_br; j++)
             phb[i * m_br + j] = (double)(i + 1);
 
-    for (int i = 0; i < m_ar; i++)
-        for (int j = 0; j < m_br; j++)
+    for (i = 0; i < m_ar; i++)
+        for (j = 0; j < m_br; j++)
             phc[i * m_br + j] = 0.0;
 
+	int ret = PAPI_start(EventSet);
+	if (ret != PAPI_OK) cout << "ERRO: Start PAPI" << endl;
+
     emlStart();
-    Time1 = omp_get_wtime();
+    Time1 = clock();
 
     #pragma omp parallel private(i, k)
-    for (int i = 0; i < m_ar; i++) {
-        for (int k = 0; k < m_br; k++) {
+    for (i = 0; i < m_ar; i++) {
+        for (k = 0; k < m_br; k++) {
             #pragma omp for
-            for (int j = 0; j < m_ar; j++) {
+            for (j = 0; j < m_ar; j++) {
                 phc[i * m_br + j] += pha[i * m_ar + k] * phb[k * m_br + j];
             }
         }
     }
 
-    Time2 = omp_get_wtime();
+    Time2 = clock();
     emlStop(data);
+    
+	ret = PAPI_stop(EventSet, values);
+	if (ret != PAPI_OK) cout << "ERRO: Stop PAPI" << endl;
     
     double consumed;
     emlDataGetConsumed(data[0], &consumed);
     emlDataFree(data[0]);
-    
     printf("This device consumed %g J \n", consumed);
     
     write_to_file(filename, Time2 - Time1, values, m_ar, consumed);

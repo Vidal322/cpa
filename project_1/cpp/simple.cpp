@@ -32,8 +32,6 @@ void write_to_file(const char* filename, double time, long long values[], int  s
 }
 
 void OnMult(int m_ar, int m_br, const char* filename, int EventSet) {
-	
-
 	emlInit();
 	//allocate space for results
 	size_t count = 1;
@@ -109,11 +107,9 @@ void OnMult(int m_ar, int m_br, const char* filename, int EventSet) {
 }
 
 
-void OnMultLine(int m_ar, int m_br, const char* filename, int EventSet)
-{
-
+void OnMultLine(int m_ar, int m_br, const char* filename, int EventSet) {
 	emlInit();
-	//allocate space for results
+
 	size_t count = 1;
 	emlDeviceGetCount(&count);
 	emlData_t *data[count];
