@@ -121,10 +121,9 @@ void OnMultLine1(int m_ar, int m_br, const char* filename, int eventSet) {
 	int i, j, k;
 
     double *pha, *phb, *phc;
+    
     long long values[5];
     
-	long long values[5];
-
 
     pha = (double *)malloc((m_ar * m_ar) * sizeof(double));
     phb = (double *)malloc((m_br * m_br) * sizeof(double));
@@ -143,7 +142,7 @@ void OnMultLine1(int m_ar, int m_br, const char* filename, int eventSet) {
             phc[i * m_br + j] = 0.0;
 
 
-	int ret = PAPI_start(EventSet);
+	int ret = PAPI_start(eventSet);
 	if (ret != PAPI_OK) cout << "ERRO: Start PAPI" << endl;
 
     emlStart();
@@ -161,7 +160,7 @@ void OnMultLine1(int m_ar, int m_br, const char* filename, int eventSet) {
     Time2 = clock();
     emlStop(data);
     
-	ret = PAPI_stop(EventSet, values);
+	ret = PAPI_stop(eventSet, values);
 	if (ret != PAPI_OK) cout << "ERRO: Stop PAPI" << endl;
 
     double consumed;
@@ -189,8 +188,6 @@ void OnMultLine2(int m_ar, int m_br, const char* filename, int eventSet) {
 	int i, j, k;
 
     double *pha, *phb, *phc;
-
-    long long values[5];
     
 	long long values[5];
 
@@ -212,7 +209,7 @@ void OnMultLine2(int m_ar, int m_br, const char* filename, int eventSet) {
         for (j = 0; j < m_br; j++)
             phc[i * m_br + j] = 0.0;
 
-	int ret = PAPI_start(EventSet);
+	int ret = PAPI_start(eventSet);
 	if (ret != PAPI_OK) cout << "ERRO: Start PAPI" << endl;
 
     emlStart();
@@ -231,7 +228,7 @@ void OnMultLine2(int m_ar, int m_br, const char* filename, int eventSet) {
     Time2 = clock();
     emlStop(data);
     
-	ret = PAPI_stop(EventSet, values);
+	ret = PAPI_stop(eventSet, values);
 	if (ret != PAPI_OK) cout << "ERRO: Stop PAPI" << endl;
     
     double consumed;
@@ -281,7 +278,8 @@ int main (int argc, char *argv[])
   	long long values[5];
   	int ret;
 
-	char filename[40] = "simple.csv";
+	char filename[40] = "parallel.csv";
+
 	
 	//PAPI
 
